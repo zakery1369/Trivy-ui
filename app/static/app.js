@@ -1,17 +1,22 @@
-let currentTab = 'local';
-let currentReport = null;
+let currentTab = "local";
 let currentDownloads = null;
 let allRows = [];
-let selectedSeverity = 'ALL';
+let selectedSeverity = "ALL";
 let imagesLoading = false;
-let lastImagesLoadAt = 0;
 
 const $ = (id) => document.getElementById(id);
+const persianNumber = (value) => Number(value || 0).toLocaleString("fa-IR");
 
-function setStatus(text, type = '') {
-  const el = $('scanStatus');
+function setStatus(text, type = "") {
+  const el = $("scanStatus");
   el.textContent = text;
-  el.className = `status ${type}`;
+  el.className = `status ${type}`.trim();
+}
+
+function setButtonBusy(button, busy, busyText) {
+  if (!button.dataset.label) button.dataset.label = button.textContent.trim();
+  button.disabled = busy;
+  button.textContent = busy ? busyText : button.dataset.label;
 }
 
 function flattenVulns(report) {
@@ -19,13 +24,12 @@ function flattenVulns(report) {
   for (const result of report.Results || []) {
     for (const vuln of result.Vulnerabilities || []) {
       rows.push({
-        target: result.Target || '',
-        package: vuln.PkgName || '',
-        severity: (vuln.Severity || 'UNKNOWN').toUpperCase(),
-        cve: vuln.VulnerabilityID || '',
-        installed: vuln.InstalledVersion || '',
-        fixed: vuln.FixedVersion || 'Not fixed',
-        title: vuln.Title || vuln.Description || ''
+        package: vuln.PkgName || "",
+        severity: (vuln.Severity || "UNKNOWN").toUpperCase(),
+        cve: vuln.VulnerabilityID || "",
+        installed: vuln.InstalledVersion || "",
+        fixed: vuln.FixedVersion || "اصلاح نشده",
+        title: vuln.Title || vuln.Description || ""
       });
     }
   }
@@ -33,200 +37,221 @@ function flattenVulns(report) {
 }
 
 function escapeHtml(value) {
-  return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  return String(value).replace(/[&<>'"]/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+  })[character]);
 }
 
 function renderTable() {
-  const q = $('searchBox').value.trim().toLowerCase();
+  const query = $("searchBox").value.trim().toLowerCase();
   let rows = allRows;
-  if (selectedSeverity !== 'ALL') rows = rows.filter(r => r.severity === selectedSeverity);
-  if (q) rows = rows.filter(r => Object.values(r).join(' ').toLowerCase().includes(q));
-  const body = $('resultsBody');
+
+  if (selectedSeverity !== "ALL") {
+    rows = rows.filter((row) => row.severity === selectedSeverity);
+  }
+  if (query) {
+    rows = rows.filter((row) => Object.values(row).join(" ").toLowerCase().includes(query));
+  }
+
+  $("resultCount").textContent = persianNumber(rows.length);
+  const body = $("resultsBody");
   if (!rows.length) {
-    body.innerHTML = '<tr><td colspan="6" class="empty">موردی برای نمایش وجود ندارد.</td></tr>';
+    body.innerHTML = `<tr><td colspan="6" class="empty">${
+      allRows.length ? "موردی مطابق فیلتر فعلی پیدا نشد." : "هنوز اسکنی انجام نشده است."
+    }</td></tr>`;
     return;
   }
-  body.innerHTML = rows.slice(0, 250).map(r => `
+
+  body.innerHTML = rows.slice(0, 250).map((row) => `
     <tr>
-      <td>${escapeHtml(r.package)}</td>
-      <td><span class="sev ${escapeHtml(r.severity)}">${escapeHtml(r.severity)}</span></td>
-      <td>${escapeHtml(r.cve)}</td>
-      <td>${escapeHtml(r.installed)}</td>
-      <td>${escapeHtml(r.fixed)}</td>
-      <td>${escapeHtml(r.title)}</td>
+      <td>${escapeHtml(row.package)}</td>
+      <td><span class="sev ${escapeHtml(row.severity)}">${escapeHtml(row.severity)}</span></td>
+      <td>${escapeHtml(row.cve)}</td>
+      <td>${escapeHtml(row.installed)}</td>
+      <td>${escapeHtml(row.fixed)}</td>
+      <td>${escapeHtml(row.title)}</td>
     </tr>
-  `).join('');
+  `).join("");
 }
 
-function updateSummary(summary) {
-  const critical = summary.CRITICAL || 0;
-  const high = summary.HIGH || 0;
-  const medium = summary.MEDIUM || 0;
-  const low = summary.LOW || 0;
-  const total = critical + high + medium + low + (summary.UNKNOWN || 0);
-  $('criticalCount').textContent = critical;
-  $('highCount').textContent = high;
-  $('mediumCount').textContent = medium;
-  $('lowCount').textContent = low;
-  $('donut').querySelector('span').textContent = total;
-  if (total > 0) {
-    let a = critical / total * 360;
-    let b = a + high / total * 360;
-    let c = b + medium / total * 360;
-    $('donut').style.background = `conic-gradient(var(--critical) 0deg ${a}deg, var(--high) ${a}deg ${b}deg, var(--medium) ${b}deg ${c}deg, var(--low) ${c}deg 360deg)`;
+function updateSummary(summary = {}) {
+  const values = {
+    critical: summary.CRITICAL || 0,
+    high: summary.HIGH || 0,
+    medium: summary.MEDIUM || 0,
+    low: summary.LOW || 0
+  };
+  const total = Object.values(values).reduce((sum, count) => sum + count, 0) + (summary.UNKNOWN || 0);
+
+  for (const [severity, count] of Object.entries(values)) {
+    $(`${severity}Count`).textContent = persianNumber(count);
+    $(`legend${severity[0].toUpperCase()}${severity.slice(1)}`).textContent = persianNumber(count);
   }
+  $("donut").querySelector(".donut-content span").textContent = persianNumber(total);
+  $("donut").setAttribute("aria-label", `توزیع شدت آسیب‌پذیری‌ها، مجموع ${total} مورد`);
+
+  if (!total) {
+    $("donut").style.background = "conic-gradient(var(--border-strong) 0 360deg)";
+    return;
+  }
+
+  const criticalEnd = values.critical / total * 360;
+  const highEnd = criticalEnd + values.high / total * 360;
+  const mediumEnd = highEnd + values.medium / total * 360;
+  const lowEnd = mediumEnd + values.low / total * 360;
+  $("donut").style.background = `conic-gradient(
+    var(--critical) 0deg ${criticalEnd}deg,
+    var(--high) ${criticalEnd}deg ${highEnd}deg,
+    var(--medium) ${highEnd}deg ${mediumEnd}deg,
+    var(--low) ${mediumEnd}deg ${lowEnd}deg,
+    var(--unknown) ${lowEnd}deg 360deg
+  )`;
 }
 
 async function loadTrivyVersion() {
   try {
-    const res = await fetch('/api/trivy-version', { cache: 'no-store' });
-    const data = await res.json();
-    const version = data.version ? ` ${data.version}` : '';
-    $('trivyTitle').textContent = `اسکن کانتینر با Trivy${version}`;
-  } catch (err) {
-    $('trivyTitle').textContent = 'اسکن کانتینر با Trivy';
+    const response = await fetch("/api/trivy-version", { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    const data = await response.json();
+    $("trivyTitle").textContent = data.version ? `Trivy ${data.version}` : "Trivy";
+  } catch {
+    $("trivyTitle").textContent = "Trivy";
   }
 }
 
-async function loadImages(options = {}) {
-  const { force = false } = options;
+function setDockerStatus(connected, text) {
+  $("dockerStatus").textContent = text;
+  document.querySelector(".status-dot").style.background = connected ? "var(--accent)" : "var(--critical)";
+}
 
-  // جلوی درخواست‌های پشت سر هم را می‌گیرد، مگر اینکه کاربر دکمه رفرش را زده باشد.
+async function loadImages() {
   if (imagesLoading) return;
-  const now = Date.now();
-  if (!force && now - lastImagesLoadAt < 1200) return;
 
-  const select = $('localImages');
-  const refreshBtn = $('refreshImages');
-  const status = $('imagesStatus');
+  const select = $("localImages");
   const previousValue = select.value;
-
   imagesLoading = true;
-  lastImagesLoadAt = now;
-  if (refreshBtn) refreshBtn.disabled = true;
-  if (status) status.textContent = 'در حال به‌روزرسانی لیست ایمیج‌ها...';
+  $("refreshImages").disabled = true;
+  $("imagesStatus").textContent = "در حال به‌روزرسانی لیست ایمیج‌ها...";
 
   try {
-    const res = await fetch(`/api/images?t=${Date.now()}`, { cache: 'no-store' });
-    const data = await res.json();
-
-    $('dockerStatus').textContent = data.docker_connected ? 'Docker متصل است' : 'Docker وصل نیست؛ socket را mount کنید';
+    const response = await fetch(`/api/images?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error();
+    const data = await response.json();
+    const images = Array.isArray(data.images) ? data.images : [];
+    setDockerStatus(data.docker_connected, data.docker_connected ? "Docker متصل" : "Docker در دسترس نیست");
 
     if (!data.docker_connected) {
-      select.innerHTML = '<option value="">Docker وصل نیست</option>';
-      if (status) status.textContent = 'اتصال به Docker برقرار نیست. Docker socket را mount کنید.';
-      return;
+      select.innerHTML = '<option value="">Docker در دسترس نیست</option>';
+      $("imagesStatus").textContent = "اتصال Docker برقرار نیست؛ socket را بررسی کنید.";
+    } else if (!images.length) {
+      select.innerHTML = '<option value="">ایمیج محلی پیدا نشد</option>';
+      $("imagesStatus").textContent = "برای اسکن، آدرس ایمیج را در تب Registry وارد کنید.";
+    } else {
+      select.innerHTML = images.map((image) =>
+        `<option value="${escapeHtml(image)}">${escapeHtml(image)}</option>`
+      ).join("");
+      if (previousValue && images.includes(previousValue)) select.value = previousValue;
+      $("imagesStatus").textContent = `${persianNumber(images.length)} ایمیج محلی در دسترس است.`;
     }
-
-    if (!data.images.length) {
-      select.innerHTML = '<option value="">ایمیجی پیدا نشد؛ آدرس را دستی وارد کنید</option>';
-      if (status) status.textContent = 'هیچ ایمیج لوکالی پیدا نشد.';
-      return;
-    }
-
-    select.innerHTML = data.images
-      .map(img => `<option value="${escapeHtml(img)}">${escapeHtml(img)}</option>`)
-      .join('');
-
-    // اگر ایمیج قبلی هنوز وجود داشت، همان انتخاب قبلی حفظ شود.
-    if (previousValue && data.images.includes(previousValue)) {
-      select.value = previousValue;
-    }
-
-    if (status) status.textContent = `لیست به‌روز شد. تعداد ایمیج‌های لوکال: ${data.images.length}`;
-  } catch (err) {
-    select.innerHTML = '<option value="">خطا در دریافت لیست ایمیج‌ها</option>';
-    $('dockerStatus').textContent = 'خطا در اتصال به Docker';
-    if (status) status.textContent = 'خطا در دریافت لیست ایمیج‌ها.';
+  } catch {
+    select.innerHTML = '<option value="">خطا در دریافت ایمیج‌ها</option>';
+    setDockerStatus(false, "خطا در اتصال Docker");
+    $("imagesStatus").textContent = "دریافت لیست ایمیج‌ها ناموفق بود.";
   } finally {
     imagesLoading = false;
-    if (refreshBtn) refreshBtn.disabled = false;
+    $("refreshImages").disabled = false;
   }
 }
 
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    currentTab = btn.dataset.tab;
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-    btn.classList.add('active');
-    $('localPanel').classList.toggle('active-panel', currentTab === 'local');
-    $('remotePanel').classList.toggle('active-panel', currentTab === 'remote');
-
-    if (currentTab === 'local') {
-      loadImages({ force: true });
-    }
+document.querySelectorAll(".tab").forEach((button) => {
+  button.addEventListener("click", () => {
+    currentTab = button.dataset.tab;
+    document.querySelectorAll(".tab").forEach((tab) => {
+      const selected = tab === button;
+      tab.classList.toggle("active", selected);
+      tab.setAttribute("aria-selected", String(selected));
+    });
+    const localActive = currentTab === "local";
+    $("localPanel").classList.toggle("active-panel", localActive);
+    $("localPanel").hidden = !localActive;
+    $("remotePanel").classList.toggle("active-panel", !localActive);
+    $("remotePanel").hidden = localActive;
+    if (!localActive) $("remoteImage").focus();
   });
 });
 
-document.querySelectorAll('.filter').forEach(btn => {
-  btn.addEventListener('click', () => {
-    selectedSeverity = btn.dataset.sev;
-    document.querySelectorAll('.filter').forEach(x => x.classList.remove('active'));
-    btn.classList.add('active');
+document.querySelectorAll(".filter").forEach((button) => {
+  button.addEventListener("click", () => {
+    selectedSeverity = button.dataset.sev;
+    document.querySelectorAll(".filter").forEach((filter) => {
+      filter.classList.toggle("active", filter === button);
+    });
     renderTable();
   });
 });
 
-$('searchBox').addEventListener('input', renderTable);
+$("searchBox").addEventListener("input", renderTable);
+$("refreshImages").addEventListener("click", loadImages);
 
-// وقتی کاربر لیست کشویی را باز می‌کند یا با کیبورد/ماوس روی آن می‌رود، لیست تازه می‌شود.
-$('localImages').addEventListener('focus', () => loadImages({ force: false }));
-$('localImages').addEventListener('mousedown', () => loadImages({ force: false }));
-$('localImages').addEventListener('pointerdown', () => loadImages({ force: false }));
-
-$('updateDb').addEventListener('click', async () => {
-  $('updateDb').disabled = true;
-  $('dbStatus').textContent = 'در حال آپدیت دیتابیس...';
+$("updateDb").addEventListener("click", async () => {
+  const button = $("updateDb");
+  setButtonBusy(button, true, "در حال به‌روزرسانی...");
+  $("dbStatus").textContent = "دیتابیس در حال به‌روزرسانی است...";
   try {
-    const res = await fetch('/api/update-db', { method: 'POST', cache: 'no-store' });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'آپدیت ناموفق بود');
-    $('dbStatus').textContent = 'آخرین آپدیت: همین حالا';
-  } catch (err) {
-    $('dbStatus').textContent = err.message;
+    const response = await fetch("/api/update-db", { method: "POST", cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "به‌روزرسانی ناموفق بود.");
+    $("dbStatus").textContent = "دیتابیس همین حالا به‌روزرسانی شد.";
+  } catch (error) {
+    $("dbStatus").textContent = error.message || "به‌روزرسانی دیتابیس ناموفق بود.";
   } finally {
-    $('updateDb').disabled = false;
+    setButtonBusy(button, false);
   }
 });
 
-$('scanBtn').addEventListener('click', async () => {
-  const image = currentTab === 'local' ? $('localImages').value : $('remoteImage').value.trim();
+$("scanBtn").addEventListener("click", async () => {
+  const image = currentTab === "local" ? $("localImages").value : $("remoteImage").value.trim();
   if (!image) {
-    setStatus('لطفاً یک ایمیج انتخاب یا وارد کنید.');
+    setStatus("یک ایمیج انتخاب یا وارد کنید.", "error");
     return;
   }
-  $('scanBtn').disabled = true;
-  setStatus('در حال آماده‌سازی و اسکن...');
+
+  const button = $("scanBtn");
+  setButtonBusy(button, true, "در حال اسکن...");
+  setStatus("آماده‌سازی ایمیج و اجرای اسکن...", "loading");
   try {
-    const res = await fetch('/api/scan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image, pull_if_missing: true })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'اسکن ناموفق بود');
-    currentReport = data.report;
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "اسکن ناموفق بود.");
+
     currentDownloads = data.downloads;
-    allRows = flattenVulns(currentReport);
+    allRows = flattenVulns(data.report || {});
     updateSummary(data.summary);
     renderTable();
-    $('downloadBtn').disabled = false;
-    setStatus(data.pulled ? 'ایمیج دانلود و اسکن شد.' : 'اسکن با موفقیت انجام شد.');
-
-    // اگر طی اسکن ایمیج pull شده باشد، لیست ایمیج‌های لوکال را هم تازه کن.
-    loadImages({ force: true });
-  } catch (err) {
-    setStatus(err.message);
+    $("downloadBtn").disabled = false;
+    setStatus(data.pulled ? "ایمیج دریافت و با موفقیت اسکن شد." : "اسکن با موفقیت انجام شد.", "success");
+    $("summaryTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    setStatus(error.message || "اسکن ناموفق بود.", "error");
   } finally {
-    $('scanBtn').disabled = false;
+    setButtonBusy(button, false);
   }
 });
 
-$('downloadBtn').addEventListener('click', () => {
+$("remoteImage").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") $("scanBtn").click();
+});
+
+$("downloadBtn").addEventListener("click", () => {
   if (!currentDownloads) return;
-  const fmt = $('exportFormat').value;
-  window.location.href = currentDownloads[fmt];
+  const format = $("exportFormat").value;
+  if (currentDownloads[format]) window.location.href = currentDownloads[format];
 });
 
 loadTrivyVersion();
-loadImages({ force: true });
+// لیست در ورود اولیه فقط یک‌بار دریافت می‌شود؛ تازه‌سازی‌های بعدی کاملاً دستی هستند.
+loadImages();

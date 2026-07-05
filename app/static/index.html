@@ -3,149 +3,171 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Zakops-Security</title>
+  <meta name="theme-color" content="#08110f" />
+  <title>Trivy UI | اسکن امنیتی ایمیج</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="brand">
-      <div class="logo">Z</div>
-      <div>
-        <strong>DevSecOps</strong>
-        <span>اسکن امنیتی ایمیج</span>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/" aria-label="صفحه اصلی Trivy UI">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/static/zak.png" alt="" />
+        </span>
+        <span class="brand-copy">
+          <span class="brand-owner" dir="ltr">ZAKOPS</span>
+          <strong dir="ltr">Trivy UI</strong>
+          <small>داشبورد اسکن امنیتی ایمیج‌های Docker</small>
+        </span>
+      </a>
+      <div class="system-status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="dockerStatus">در حال بررسی Docker...</span>
+        <span class="separator" aria-hidden="true"></span>
+        <span id="trivyTitle">Trivy</span>
       </div>
     </div>
-    <nav class="sidebar-links" aria-label="لینک‌های Zakops">
-      <a href="https://github.com/zakery1369" target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.53.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.93.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z"/></svg>
-        <span>GitHub</span>
-      </a>
-      <a href="https://t.me/Zakops" target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3.2 18.7 20c-.25 1.18-.92 1.47-1.86.92l-5.15-3.8-2.48 2.39c-.27.27-.5.5-1.03.5l.37-5.25 9.56-8.64c.42-.37-.09-.58-.64-.21L5.65 13.35.56 11.76c-1.1-.34-1.12-1.1.23-1.63L20.7 2.46c.92-.34 1.72.2 1.3.74Z"/></svg>
-        <span>Telegram Zakops</span>
-      </a>
-      <a href="https://t.me/DevOpsPersian" target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3.2 18.7 20c-.25 1.18-.92 1.47-1.86.92l-5.15-3.8-2.48 2.39c-.27.27-.5.5-1.03.5l.37-5.25 9.56-8.64c.42-.37-.09-.58-.64-.21L5.65 13.35.56 11.76c-1.1-.34-1.12-1.1.23-1.63L20.7 2.46c.92-.34 1.72.2 1.3.74Z"/></svg>
-        <span>DevOpsPersian</span>
-      </a>
-      <a href="https://t.me/DevOpsZakops" target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3.2 18.7 20c-.25 1.18-.92 1.47-1.86.92l-5.15-3.8-2.48 2.39c-.27.27-.5.5-1.03.5l.37-5.25 9.56-8.64c.42-.37-.09-.58-.64-.21L5.65 13.35.56 11.76c-1.1-.34-1.12-1.1.23-1.63L20.7 2.46c.92-.34 1.72.2 1.3.74Z"/></svg>
-        <span>DevOpsZakops</span>
-      </a>
-      <a href="https://Zakops.com" target="_blank" rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm6.93 6h-3.02a15.7 15.7 0 0 0-1.4-3.07A8.04 8.04 0 0 1 18.93 8ZM12 4.04c.83 1.2 1.48 2.53 1.9 3.96h-3.8c.42-1.43 1.07-2.76 1.9-3.96ZM4.26 14a8.31 8.31 0 0 1 0-4h3.42a16.7 16.7 0 0 0 0 4H4.26Zm.81 2h3.02c.35 1.1.82 2.13 1.4 3.07A8.04 8.04 0 0 1 5.07 16Zm3.02-8H5.07a8.04 8.04 0 0 1 4.42-3.07A15.7 15.7 0 0 0 8.09 8ZM12 19.96A13.96 13.96 0 0 1 10.1 16h3.8A13.96 13.96 0 0 1 12 19.96ZM14.33 14H9.67a14.66 14.66 0 0 1 0-4h4.66a14.66 14.66 0 0 1 0 4Zm.18 5.07c.58-.94 1.05-1.97 1.4-3.07h3.02a8.04 8.04 0 0 1-4.42 3.07ZM16.32 14a16.7 16.7 0 0 0 0-4h3.42a8.31 8.31 0 0 1 0 4h-3.42Z"/></svg>
-        <span>Zakops.com</span>
-      </a>
-    </nav>
-    <div class="shield">
-      <div class="shield-icon cyber-icon"><img src="/static/security-hexagon.png" alt="Cyber Security" /></div>
-      <p id="trivyTitle">اسکن کانتینر با Trivy</p>
-      <small id="dockerStatus">در حال بررسی Docker...</small>
-    </div>
-  </aside>
+  </header>
 
-  <main class="main">
-    <header class="topbar">
+  <main class="page-shell">
+    <section class="page-intro" aria-labelledby="pageTitle">
       <div>
-        <h1>Trivy UI</h1>
-        <p>انتخاب ایمیج، آپدیت دستی دیتابیس، اسکن و دریافت گزارش</p>
+        <p class="eyebrow">ارزیابی آسیب‌پذیری کانتینر</p>
+        <h1 id="pageTitle">اسکن یک ایمیج جدید</h1>
+        <p>ایمیج را انتخاب کنید، در صورت نیاز دیتابیس را به‌روز کنید و نتایج اسکن را در همین صفحه بررسی کنید.</p>
       </div>
-    </header>
-
-    <section class="grid top-grid">
-      <div class="card source-card">
-        <div class="card-title"><span>۱</span> انتخاب منبع ایمیج</div>
-        <div class="tabs">
-          <button class="tab active" data-tab="local">انتخاب ایمیج از سیستم</button>
-          <button class="tab" data-tab="remote">آدرس ایمیج در اینترنت</button>
-        </div>
-
-        <div id="localPanel" class="panel active-panel">
-          <label>ایمیج‌های موجود روی سیستم</label>
-          <select id="localImages"><option value="">در حال دریافت لیست...</option></select>
-          <small id="imagesStatus">هر بار که این لیست را باز کنید، لیست ایمیج‌های Docker دوباره بررسی می‌شود.</small>
-          <small>اگر ایمیج در سیستم وجود نداشته باشد، به صورت خودکار دانلود می‌شود.</small>
-        </div>
-
-        <div id="remotePanel" class="panel">
-          <label>آدرس ایمیج / Registry</label>
-          <input id="remoteImage" placeholder="مثلاً nginx:latest یا ghcr.io/org/image:tag" />
-          <small>اگر ایمیج روی سیستم نباشد، برنامه ابتدا آن را دانلود و سپس اسکن می‌کند.</small>
-        </div>
-      </div>
-
-      <div class="card db-card">
-        <div class="card-title"><span>۲</span> آپدیت دیتابیس Trivy</div>
-        <button id="updateDb" class="btn teal">آپدیت دیتابیس Trivy</button>
-        <p>دیتابیس آسیب‌پذیری‌ها قبل از هر اسکن آپدیت نمی‌شود؛ فقط وقتی این دکمه را بزنید به‌روزرسانی انجام می‌شود.</p>
-        <small id="dbStatus">آخرین وضعیت: نامشخص</small>
-      </div>
-
-      <div class="card scan-card">
-        <div class="card-title"><span>۳</span> شروع اسکن</div>
-        <button id="scanBtn" class="btn green">شروع اسکن</button>
-        <p>بعد از انتخاب منبع تصویر، اسکن با دیتابیس موجود انجام می‌شود.</p>
-        <div id="scanStatus" class="status">آماده اسکن</div>
+      <div class="workflow" aria-label="مراحل اسکن">
+        <span class="active"><b>۱</b> انتخاب ایمیج</span>
+        <i></i>
+        <span><b>۲</b> به‌روزرسانی دیتابیس</span>
+        <i></i>
+        <span><b>۳</b> اجرای اسکن</span>
+        <i></i>
+        <span><b>۴</b> بررسی گزارش</span>
       </div>
     </section>
 
-    <section class="grid middle-grid">
-      <div class="card summary-card">
-        <div class="card-title">خلاصه نتایج</div>
-        <div class="stats">
-          <div class="stat critical"><span>Critical</span><strong id="criticalCount">0</strong></div>
-          <div class="stat high"><span>High</span><strong id="highCount">0</strong></div>
-          <div class="stat medium"><span>Medium</span><strong id="mediumCount">0</strong></div>
-          <div class="stat low"><span>Low</span><strong id="lowCount">0</strong></div>
+    <section class="card scan-config" aria-labelledby="scanConfigTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="scanConfigTitle">تنظیمات اسکن</h2>
+          <p>منبع ایمیج و گزینه موردنظر را مشخص کنید.</p>
+        </div>
+        <button id="updateDb" class="btn btn-secondary" type="button">
+          به‌روزرسانی دیتابیس
+        </button>
+      </div>
+
+      <div class="source-tabs" role="tablist" aria-label="منبع ایمیج">
+        <button class="tab active" id="localTab" data-tab="local" role="tab" aria-selected="true" aria-controls="localPanel">ایمیج محلی</button>
+        <button class="tab" id="remoteTab" data-tab="remote" role="tab" aria-selected="false" aria-controls="remotePanel">Registry / اینترنت</button>
+      </div>
+
+      <div class="scan-controls">
+        <div class="source-fields">
+          <div id="localPanel" class="panel active-panel" role="tabpanel" aria-labelledby="localTab">
+            <div class="field-head">
+              <label for="localImages">ایمیج موجود روی سیستم</label>
+              <button id="refreshImages" class="text-btn" type="button">تازه‌سازی لیست</button>
+            </div>
+            <select id="localImages">
+              <option value="">در حال دریافت لیست...</option>
+            </select>
+            <small id="imagesStatus" class="field-note">در حال بررسی ایمیج‌های Docker...</small>
+          </div>
+
+          <div id="remotePanel" class="panel" role="tabpanel" aria-labelledby="remoteTab" hidden>
+            <label for="remoteImage">نام یا آدرس ایمیج</label>
+            <input id="remoteImage" type="text" dir="ltr" autocomplete="off" spellcheck="false"
+              placeholder="nginx:latest یا ghcr.io/org/image:tag" />
+            <small class="field-note">در صورت نبود ایمیج، ابتدا از Registry دریافت می‌شود.</small>
+          </div>
+        </div>
+        <button id="scanBtn" class="btn btn-primary" type="button">شروع اسکن</button>
+      </div>
+
+      <div class="activity-row" aria-live="polite">
+        <div id="scanStatus" class="status">آماده اسکن</div>
+        <small id="dbStatus">وضعیت دیتابیس: نامشخص</small>
+      </div>
+    </section>
+
+    <section class="summary-section" aria-labelledby="summaryTitle">
+      <div class="section-heading compact">
+        <div>
+          <h2 id="summaryTitle">خلاصه آسیب‌پذیری‌ها</h2>
+          <p>توزیع نتایج بر اساس سطح شدت</p>
         </div>
       </div>
-
-      <div class="card chart-card">
-        <div class="donut" id="donut"><div class="donut-content"><span>0</span><small>مجموع</small></div></div>
-        <ul class="legend">
-          <li><b class="c-critical"></b>Critical</li>
-          <li><b class="c-high"></b>High</li>
-          <li><b class="c-medium"></b>Medium</li>
-          <li><b class="c-low"></b>Low</li>
-        </ul>
+      <div class="summary-grid">
+        <article class="stat critical"><span>بحرانی <b>Critical</b></span><strong id="criticalCount">۰</strong></article>
+        <article class="stat high"><span>بالا <b>High</b></span><strong id="highCount">۰</strong></article>
+        <article class="stat medium"><span>متوسط <b>Medium</b></span><strong id="mediumCount">۰</strong></article>
+        <article class="stat low"><span>پایین <b>Low</b></span><strong id="lowCount">۰</strong></article>
       </div>
+    </section>
 
-      <div class="card export-card">
-        <div class="card-title">خروجی گزارش</div>
-        <label>فرمت خروجی</label>
-        <div class="export-row">
-          <select id="exportFormat">
+    <section class="insights-grid">
+      <article class="card distribution-card">
+        <div class="section-heading compact">
+          <div><h2>توزیع شدت</h2><p>نمای کلی یافته‌های آخرین اسکن</p></div>
+        </div>
+        <div class="chart-layout">
+          <div class="donut" id="donut" role="img" aria-label="نمودار توزیع شدت آسیب‌پذیری‌ها">
+            <div class="donut-content"><span>۰</span><small>مجموع</small></div>
+          </div>
+          <ul class="legend">
+            <li><i class="c-critical"></i><span>Critical</span><b id="legendCritical">۰</b></li>
+            <li><i class="c-high"></i><span>High</span><b id="legendHigh">۰</b></li>
+            <li><i class="c-medium"></i><span>Medium</span><b id="legendMedium">۰</b></li>
+            <li><i class="c-low"></i><span>Low</span><b id="legendLow">۰</b></li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="card report-card">
+        <div class="section-heading compact">
+          <div><h2>دریافت گزارش</h2><p>خروجی آخرین اسکن را ذخیره کنید.</p></div>
+        </div>
+        <div class="export-controls">
+          <label for="exportFormat">فرمت فایل</label>
+          <select id="exportFormat" dir="ltr">
             <option value="html">HTML</option>
             <option value="json">JSON</option>
             <option value="sarif">SARIF</option>
             <option value="txt">TXT</option>
           </select>
-          <button id="downloadBtn" class="btn blue" disabled>دانلود گزارش</button>
+          <button id="downloadBtn" class="btn btn-secondary" type="button" disabled>دانلود گزارش</button>
         </div>
-      </div>
+      </article>
     </section>
 
-    <section class="card results-card">
-      <div class="results-head">
+    <section class="card results-card" aria-labelledby="resultsTitle">
+      <div class="results-header">
         <div>
-          <h2>گزارش آسیب‌پذیری‌ها</h2>
-          <p>فیلتر بر اساس شدت آسیب‌پذیری</p>
+          <h2 id="resultsTitle">جزئیات آسیب‌پذیری‌ها</h2>
+          <p><span id="resultCount">۰</span> مورد در نتایج فعلی</p>
         </div>
-        <input id="searchBox" placeholder="جستجو در نتایج..." />
+        <div class="search-field">
+          <label class="sr-only" for="searchBox">جستجو در نتایج</label>
+          <input id="searchBox" type="search" placeholder="جستجو در CVE، پکیج یا عنوان..." />
+        </div>
       </div>
-      <div class="filters">
-        <button class="filter active" data-sev="ALL">همه</button>
-        <button class="filter critical" data-sev="CRITICAL">Critical</button>
-        <button class="filter high" data-sev="HIGH">High</button>
-        <button class="filter medium" data-sev="MEDIUM">Medium</button>
-        <button class="filter low" data-sev="LOW">Low</button>
-        <button class="filter unknown" data-sev="UNKNOWN">Unknown</button>
+
+      <div class="filters" role="group" aria-label="فیلتر شدت">
+        <button class="filter active" data-sev="ALL" type="button">همه</button>
+        <button class="filter critical" data-sev="CRITICAL" type="button">Critical</button>
+        <button class="filter high" data-sev="HIGH" type="button">High</button>
+        <button class="filter medium" data-sev="MEDIUM" type="button">Medium</button>
+        <button class="filter low" data-sev="LOW" type="button">Low</button>
+        <button class="filter unknown" data-sev="UNKNOWN" type="button">Unknown</button>
       </div>
+
       <div class="table-wrap">
         <table>
-          <thead>
-            <tr><th>Package</th><th>Severity</th><th>CVE</th><th>Installed Version</th><th>Fixed Version</th><th>Title</th></tr>
-          </thead>
+          <thead><tr>
+            <th>پکیج</th><th>شدت</th><th>CVE</th><th>نسخه نصب‌شده</th><th>نسخه اصلاح‌شده</th><th>عنوان</th>
+          </tr></thead>
           <tbody id="resultsBody">
             <tr><td colspan="6" class="empty">هنوز اسکنی انجام نشده است.</td></tr>
           </tbody>
