@@ -4,6 +4,8 @@ import os
 import re
 import subprocess
 import hashlib
+import threading
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -19,6 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent
 REPORT_DIR = Path(os.getenv("REPORT_DIR", "/app/reports"))
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 TRIVY_CACHE_DIR = os.getenv("TRIVY_CACHE_DIR", "/var/lib/trivy")
+TRIVY_OPERATION_LOCK = threading.Lock()
 
 app = FastAPI(title="Trivy UI", version="1.0.0")
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -63,6 +66,20 @@ def run_command(args: list[str], timeout: int = 900) -> subprocess.CompletedProc
     env = os.environ.copy()
     env["TRIVY_CACHE_DIR"] = TRIVY_CACHE_DIR
     return subprocess.run(args, capture_output=True, text=True, timeout=timeout, env=env)
+
+
+@contextmanager
+def trivy_operation():
+    """Prevent DB updates and scans from using Trivy's local cache concurrently."""
+    if not TRIVY_OPERATION_LOCK.acquire(blocking=False):
+        raise HTTPException(
+            status_code=409,
+            detail="عملیات دیگری با Trivy در حال اجرا است. پس از پایان آن دوباره تلاش کنید.",
+        )
+    try:
+        yield
+    finally:
+        TRIVY_OPERATION_LOCK.release()
 
 
 def image_exists_locally(image_ref: str) -> bool:
@@ -230,8 +247,9 @@ def list_images():
 
 @app.post("/api/update-db")
 def update_database():
-    cmd = ["trivy", "image", "--download-db-only"]
-    proc = run_command(cmd, timeout=1200)
+    with trivy_operation():
+        cmd = ["trivy", "image", "--download-db-only"]
+        proc = run_command(cmd, timeout=1200)
     if proc.returncode != 0:
         raise HTTPException(status_code=500, detail=proc.stderr or proc.stdout)
     return {"ok": True, "message": "دیتابیس Trivy با موفقیت آپدیت شد.", "time": datetime.now().isoformat()}
@@ -258,36 +276,51 @@ def scan(req: ScanRequest):
     # incorrectly save the report as container.workzy.json.
     json_path = REPORT_DIR / f"{image_file_base}.json"
 
-    cmd = [
+    # The filesystem scan cache is backed by BoltDB and permits only one process.
+    # Memory cache avoids stale/cross-process fanal locks. The application-level
+    # lock also prevents a DB update from overlapping these read operations.
+    common_scan_args = [
         "trivy",
         "image",
         "--skip-db-update",
-        "--format",
-        "json",
-        "--output",
-        str(json_path),
-        image_ref,
+        "--cache-backend",
+        "memory",
+        "--scanners",
+        "vuln",
     ]
-    proc = run_command(cmd)
-    if proc.returncode != 0:
-        raise HTTPException(
-            status_code=500,
-            detail=(proc.stderr or proc.stdout or "اسکن ناموفق بود. شاید لازم باشد اول دیتابیس Trivy را آپدیت کنید."),
-        )
 
-    report = json.loads(json_path.read_text(encoding="utf-8"))
-    html_path = REPORT_DIR / f"{image_file_base}.html"
-    txt_path = REPORT_DIR / f"{image_file_base}.txt"
-    make_html_report(report, html_path, image_ref)
-    make_txt_report(report, txt_path, image_ref)
+    with trivy_operation():
+        cmd = [
+            *common_scan_args,
+            "--format",
+            "json",
+            "--output",
+            str(json_path),
+            image_ref,
+        ]
+        proc = run_command(cmd)
+        if proc.returncode != 0:
+            raise HTTPException(
+                status_code=500,
+                detail=(proc.stderr or proc.stdout or "اسکن ناموفق بود. شاید لازم باشد اول دیتابیس Trivy را آپدیت کنید."),
+            )
 
-    # SARIF is generated separately because Trivy supports it natively.
-    sarif_path = REPORT_DIR / f"{image_file_base}.sarif"
-    sarif_proc = run_command([
-        "trivy", "image", "--skip-db-update", "--format", "sarif", "--output", str(sarif_path), image_ref
-    ])
-    if sarif_proc.returncode != 0:
-        sarif_path.write_text("SARIF generation failed\n" + (sarif_proc.stderr or sarif_proc.stdout), encoding="utf-8")
+        report = json.loads(json_path.read_text(encoding="utf-8"))
+        html_path = REPORT_DIR / f"{image_file_base}.html"
+        txt_path = REPORT_DIR / f"{image_file_base}.txt"
+        make_html_report(report, html_path, image_ref)
+        make_txt_report(report, txt_path, image_ref)
+
+        # SARIF is generated separately because Trivy supports it natively.
+        sarif_path = REPORT_DIR / f"{image_file_base}.sarif"
+        sarif_proc = run_command([
+            *common_scan_args, "--format", "sarif", "--output", str(sarif_path), image_ref
+        ])
+        if sarif_proc.returncode != 0:
+            sarif_path.write_text(
+                "SARIF generation failed\n" + (sarif_proc.stderr or sarif_proc.stdout),
+                encoding="utf-8",
+            )
 
     summary = parse_summary(report)
     return {
