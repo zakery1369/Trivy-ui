@@ -28,7 +28,7 @@ function flattenVulns(report) {
         severity: (vuln.Severity || "UNKNOWN").toUpperCase(),
         cve: vuln.VulnerabilityID || "",
         installed: vuln.InstalledVersion || "",
-        fixed: vuln.FixedVersion || "اصلاح نشده",
+        fixed: vuln.FixedVersion || "Not fixed",
         title: vuln.Title || vuln.Description || ""
       });
     }
@@ -40,6 +40,19 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
   })[character]);
+}
+
+function formatFixedVersions(value) {
+  const text = String(value || "");
+  const versions = text.split(/[,،]/).map((version) => version.trim()).filter(Boolean);
+
+  if (versions.length <= 3) {
+    return `<span class="fixed-version-value">${escapeHtml(text)}</span>`;
+  }
+
+  return `<span class="fixed-version-list">${
+    versions.map((version) => `<span>${escapeHtml(version)}</span>`).join("")
+  }</span>`;
 }
 
 function renderTable() {
@@ -68,7 +81,7 @@ function renderTable() {
       <td><span class="sev ${escapeHtml(row.severity)}">${escapeHtml(row.severity)}</span></td>
       <td>${escapeHtml(row.cve)}</td>
       <td>${escapeHtml(row.installed)}</td>
-      <td>${escapeHtml(row.fixed)}</td>
+      <td class="fixed-version-cell">${formatFixedVersions(row.fixed)}</td>
       <td>${escapeHtml(row.title)}</td>
     </tr>
   `).join("");

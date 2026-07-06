@@ -269,6 +269,22 @@ td { color: #c7d3cf; vertical-align: top; }
 tbody tr:last-child td { border-bottom: 0; }
 tbody tr:hover td { background: rgba(255, 255, 255, .018); }
 th:nth-child(-n+5), td:nth-child(-n+5) { white-space: nowrap; }
+td.fixed-version-cell {
+  width: 190px;
+  max-width: 230px;
+  white-space: normal;
+  direction: ltr;
+  text-align: left;
+  vertical-align: top;
+}
+.fixed-version-value { display: block; white-space: nowrap; }
+.fixed-version-list { display: grid; gap: 2px; }
+.fixed-version-list span {
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.45;
+}
 td:last-child { min-width: 260px; }
 .sev { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; }
 .sev.CRITICAL { color: #ff9a9a; background: rgba(240,82,82,.12); }
