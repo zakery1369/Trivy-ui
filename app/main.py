@@ -132,38 +132,79 @@ def make_html_report(report: dict[str, Any], destination: Path, image_ref: str =
 <title>Trivy Scan Report - {image_line}</title>
 <style>
 * {{ box-sizing: border-box; }}
-body {{ margin:0; background:#08111f; color:#eaf2ff; font-family:Arial, Helvetica, sans-serif; direction:ltr; text-align:left; }}
-.container {{ max-width:1280px; margin:40px auto; padding:0 24px; }}
-.card {{ background:#101c2d; border:1px solid #223855; border-radius:20px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.35); }}
-h1 {{ margin:0 0 10px; font-size:28px; }}
-.meta {{ color:#9fb3d1; margin:0 0 6px; }}
-.stats {{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin:22px 0; }}
-.stat {{ border-radius:14px; padding:16px; background:#13243a; border:1px solid #2a4567; }}
-.stat b {{ display:block; font-size:28px; margin-top:8px; color:#fff; }}
-.table-wrap {{ width:100%; overflow:auto; border:1px solid #223855; border-radius:16px; }}
+body {{
+  margin:0;
+  background:radial-gradient(circle at 82% 0,rgba(34,123,98,.12),transparent 30rem),#08110f;
+  color:#ecf4f1;
+  font-family:Arial,Helvetica,sans-serif;
+  direction:ltr;
+  text-align:left;
+}}
+.container {{ max-width:1180px; margin:42px auto; padding:0 24px; }}
+.card {{
+  background:#0d1815;
+  border:1px solid #20332d;
+  border-radius:18px;
+  padding:26px;
+  box-shadow:0 18px 55px rgba(0,0,0,.2);
+}}
+h1 {{ margin:0 0 8px; font-size:26px; letter-spacing:-.4px; }}
+.brand {{ margin:0 0 4px; color:#2dd4a7; font-size:11px; font-weight:700; letter-spacing:1px; }}
+.meta {{ color:#8fa49d; margin:0 0 5px; font-size:13px; }}
+.stats {{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:24px 0; }}
+.stat {{
+  position:relative;
+  overflow:hidden;
+  border-radius:14px;
+  padding:16px;
+  color:#b5c5c0;
+  background:#111e1a;
+  border:1px solid #20332d;
+  font-size:12px;
+}}
+.stat:before {{ content:""; position:absolute; inset:0 auto 0 0; width:3px; background:currentColor; }}
+.stat.critical {{ color:#f05252; }}
+.stat.high {{ color:#f58a45; }}
+.stat.medium {{ color:#eabf45; }}
+.stat.low {{ color:#47a9e8; }}
+.stat.unknown {{ color:#778a84; }}
+.stat b {{ display:block; margin-top:9px; color:#ecf4f1; font-size:27px; }}
+.table-wrap {{ width:100%; overflow:auto; border:1px solid #20332d; border-radius:12px; }}
 table {{ width:100%; min-width:1080px; border-collapse:collapse; direction:ltr; }}
-th, td {{ padding:12px; border-bottom:1px solid #223855; text-align:left; direction:ltr; unicode-bidi:plaintext; font-size:14px; vertical-align:top; }}
-th {{ background:#0d1828; color:#9fc3ff; position:sticky; top:0; }}
-tr.critical td {{ background:rgba(239,68,68,.12); }}
-tr.high td {{ background:rgba(249,115,22,.10); }}
-tr.medium td {{ background:rgba(234,179,8,.08); }}
-tr.low td {{ background:rgba(14,165,233,.08); }}
-span {{ display:inline-block; padding:4px 10px; border-radius:999px; background:#1c2f4d; font-weight:700; }}
-.empty {{ text-align:center; color:#9fb3d1; padding:28px; }}
+th,td {{
+  padding:12px 13px;
+  border-bottom:1px solid #20332d;
+  text-align:left;
+  direction:ltr;
+  unicode-bidi:plaintext;
+  font-size:12px;
+  vertical-align:top;
+}}
+th {{ background:#0a1411; color:#91a49e; position:sticky; top:0; font-weight:600; }}
+tbody tr:last-child td {{ border-bottom:0; }}
+tbody tr:hover td {{ background:rgba(255,255,255,.018); }}
+td span {{ display:inline-block; padding:3px 8px; border-radius:999px; font-size:10px; font-weight:700; }}
+tr.critical td span {{ color:#ff9a9a; background:rgba(240,82,82,.12); }}
+tr.high td span {{ color:#ffb17d; background:rgba(245,138,69,.12); }}
+tr.medium td span {{ color:#efd376; background:rgba(234,191,69,.12); }}
+tr.low td span {{ color:#8dccf3; background:rgba(71,169,232,.12); }}
+tr.unknown td span {{ color:#b1bfba; background:rgba(119,138,132,.14); }}
+.empty {{ text-align:center; color:#8fa49d; padding:38px; }}
 @media(max-width:800px) {{ .stats {{ grid-template-columns:1fr 1fr; }} .container {{ margin:20px auto; padding:0 12px; }} }}
 </style>
 </head>
 <body>
 <div class="container"><div class="card">
+<p class="brand">ZAKOPS</p>
 <h1>Trivy Scan Report</h1>
 <p class="meta"><b>Image:</b> {image_line}</p>
 <p class="meta"><b>Generated at:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
 <div class="stats">
-  <div class="stat">Critical<b>{summary.get('CRITICAL', 0)}</b></div>
-  <div class="stat">High<b>{summary.get('HIGH', 0)}</b></div>
-  <div class="stat">Medium<b>{summary.get('MEDIUM', 0)}</b></div>
-  <div class="stat">Low<b>{summary.get('LOW', 0)}</b></div>
-  <div class="stat">Unknown<b>{summary.get('UNKNOWN', 0)}</b></div>
+  <div class="stat critical">Critical<b>{summary.get('CRITICAL', 0)}</b></div>
+  <div class="stat high">High<b>{summary.get('HIGH', 0)}</b></div>
+  <div class="stat medium">Medium<b>{summary.get('MEDIUM', 0)}</b></div>
+  <div class="stat low">Low<b>{summary.get('LOW', 0)}</b></div>
+  <div class="stat unknown">Unknown<b>{summary.get('UNKNOWN', 0)}</b></div>
 </div>
 <div class="table-wrap">
 <table>
