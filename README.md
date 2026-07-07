@@ -155,7 +155,7 @@ trivy-ui-zakops/
         ├── index.html
         ├── styles.css
         ├── app.js
-        ├── security-hexagon.png
+        ├── zak.png
         └── fonts/
             └── Vazirmatn.woff2
 ```
@@ -240,6 +240,5 @@ Trivy یک ابزار متن‌باز برای اسکن امنیتی است که
 
 ---
 
-## License
-
-This project is released under the MIT License.
+### Copyright (C) 2026 zakery1369
+### SPDX-License-Identifier: AGPL-3.0-or-later
