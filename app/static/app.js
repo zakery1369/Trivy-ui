@@ -131,7 +131,7 @@ function renderAiRecommendation(data) {
   result.innerHTML = `
     <div class="ai-result-head">
       <strong>سطح ریسک: ${escapeHtml(recommendation.risk_level || "-")}</strong>
-      <span>${persianNumber(summary.sent_vulnerabilities)} مورد از مهمترین آسیب پذیری ها برای LLM ارسال شد و ، ${persianNumber(summary.omitted_vulnerabilities)} به دلیل محدودیت حجم prompt ارسال نشد</span>
+      <span>${persianNumber(summary.sent_vulnerabilities)} مورد از مهمترین آسیب پذیری ها برای LLM ارسال شد و ${persianNumber(summary.omitted_vulnerabilities)} مورد به دلیل محدودیت حجم prompt ارسال نشد</span>
     </div>
     <p>${escapeHtml(recommendation.executive_summary || "")}</p>
     <div class="ai-actions-list">${actions || '<p class="ai-muted">اقدام اولویت‌دار مشخصی برنگشت.</p>'}</div>
