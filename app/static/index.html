@@ -142,6 +142,47 @@
       </article>
     </section>
 
+    <section class="card ai-card" aria-labelledby="aiTitle">
+      <div class="section-heading compact">
+        <div>
+          <h2 id="aiTitle">پیشنهادهای اصلاح با AI</h2>
+          <p>اختیاری است؛ فقط با کلید و تنظیمات خودتان و بعد از کلیک دستی ارسال می‌شود.</p>
+        </div>
+      </div>
+
+      <div class="ai-grid">
+        <div>
+          <label for="aiProvider">ارائه‌دهنده</label>
+          <select id="aiProvider">
+            <option value="openai">OpenAI</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="groq">Groq</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div>
+          <label for="aiModel">مدل</label>
+          <input id="aiModel" type="text" dir="ltr" autocomplete="off" spellcheck="false" placeholder="openai/gpt-4o-mini" />
+        </div>
+        <div class="ai-base-url">
+          <label for="aiBaseUrl">Base URL</label>
+          <input id="aiBaseUrl" type="url" dir="ltr" autocomplete="off" spellcheck="false" />
+        </div>
+        <div>
+          <label for="aiApiKey">API Key</label>
+          <input id="aiApiKey" type="password" dir="ltr" autocomplete="off" spellcheck="false" placeholder="فقط برای همین درخواست استفاده می‌شود" />
+        </div>
+      </div>
+
+      <div class="ai-actions">
+        <button id="aiRecommendBtn" class="btn btn-secondary" type="button" disabled>دریافت پیشنهاد AI</button>
+        <small id="aiStatus">ابتدا یک اسکن موفق انجام دهید.</small>
+      </div>
+
+      <div id="aiResult" class="ai-result" hidden></div>
+    </section>
+
     <section class="card results-card" aria-labelledby="resultsTitle">
       <div class="results-header">
         <div>

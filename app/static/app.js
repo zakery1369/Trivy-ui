@@ -1,8 +1,17 @@
 let currentTab = "local";
 let currentDownloads = null;
+let currentScanId = null;
 let allRows = [];
 let selectedSeverity = "ALL";
 let imagesLoading = false;
+
+const aiProviderBaseUrls = {
+  openai: "https://api.openai.com/v1",
+  openrouter: "https://openrouter.ai/api/v1",
+  groq: "https://api.groq.com/openai/v1",
+  deepseek: "https://api.deepseek.com/v1",
+  custom: ""
+};
 
 const $ = (id) => document.getElementById(id);
 const persianNumber = (value) => Number(value || 0).toLocaleString("fa-IR");
@@ -53,6 +62,89 @@ function formatFixedVersions(value) {
   return `<span class="fixed-version-list">${
     versions.map((version) => `<span>${escapeHtml(version)}</span>`).join("")
   }</span>`;
+}
+
+function resetAiPanel(message = "ابتدا یک اسکن موفق انجام دهید.") {
+  currentScanId = null;
+  $("aiRecommendBtn").disabled = true;
+  $("aiStatus").textContent = message;
+  $("aiResult").hidden = true;
+  $("aiResult").innerHTML = "";
+}
+
+function enableAiPanel(scanId) {
+  currentScanId = scanId;
+  $("aiRecommendBtn").disabled = false;
+  $("aiStatus").textContent = "گزارش آماده است؛ در صورت نیاز تنظیمات AI را وارد کنید.";
+  $("aiResult").hidden = true;
+  $("aiResult").innerHTML = "";
+}
+
+function normalizeList(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function renderAiRecommendation(data) {
+  const result = $("aiResult");
+  const recommendation = data.recommendation;
+  const summary = data.summary || {};
+
+  if (data.ok === false) {
+    const providerMeta = `${data.provider || "provider"} · HTTP ${data.provider_status || "-"}${
+      data.provider_error_code ? ` · code ${data.provider_error_code}` : ""
+    }`;
+    result.innerHTML = `
+      <div class="ai-result-head">
+        <strong>${escapeHtml(data.message || "درخواست به سرویس AI ناموفق بود.")}</strong>
+        <span>${escapeHtml(providerMeta)}</span>
+      </div>
+      <p>${escapeHtml(data.provider_error || "جزئیات بیشتری از سرویس AI برنگشت.")}</p>
+    `;
+    result.hidden = false;
+    return;
+  }
+
+  if (!recommendation) {
+    result.innerHTML = `
+      <div class="ai-result-head">
+        <strong>پاسخ AI</strong>
+        <span>${persianNumber(summary.sent_vulnerabilities)} مورد ارسال شد</span>
+      </div>
+      <pre>${escapeHtml(data.raw_text || "پاسخ قابل نمایش نیست.")}</pre>
+    `;
+    result.hidden = false;
+    return;
+  }
+
+  const actions = normalizeList(recommendation.priority_actions).map((action) => `
+    <article class="ai-action-item">
+      <div>
+        <span class="ai-priority">${escapeHtml(action.priority || "-")}</span>
+        <strong>${escapeHtml(action.title || "اقدام پیشنهادی")}</strong>
+      </div>
+      <p>${escapeHtml(action.reason || "")}</p>
+      <p>${escapeHtml(action.suggested_action || "")}</p>
+      <small>پکیج‌ها: ${escapeHtml(normalizeList(action.affected_packages).join(", ") || "-")} · Effort: ${escapeHtml(action.effort || "-")}</small>
+    </article>
+  `).join("");
+
+  result.innerHTML = `
+    <div class="ai-result-head">
+      <strong>سطح ریسک: ${escapeHtml(recommendation.risk_level || "-")}</strong>
+      <span>${persianNumber(summary.sent_vulnerabilities)} مورد ارسال شد، ${persianNumber(summary.omitted_vulnerabilities)} مورد حذف شد</span>
+    </div>
+    <p>${escapeHtml(recommendation.executive_summary || "")}</p>
+    <div class="ai-actions-list">${actions || '<p class="ai-muted">اقدام اولویت‌دار مشخصی برنگشت.</p>'}</div>
+    <div class="ai-guidance">
+      <h3>Base image</h3>
+      <p>${escapeHtml(recommendation.base_image_recommendation || "-")}</p>
+      <h3>موارد بدون نسخه اصلاحی</h3>
+      <p>${escapeHtml(recommendation.not_fixed_guidance || "-")}</p>
+      <h3>گام‌های بعدی</h3>
+      <ul>${normalizeList(recommendation.next_steps).map((step) => `<li>${escapeHtml(step)}</li>`).join("")}</ul>
+    </div>
+  `;
+  result.hidden = false;
 }
 
 function renderTable() {
@@ -206,6 +298,11 @@ document.querySelectorAll(".filter").forEach((button) => {
 $("searchBox").addEventListener("input", renderTable);
 $("refreshImages").addEventListener("click", loadImages);
 
+$("aiProvider").addEventListener("change", () => {
+  const provider = $("aiProvider").value;
+  $("aiBaseUrl").value = aiProviderBaseUrls[provider] || "";
+});
+
 $("updateDb").addEventListener("click", async () => {
   const button = $("updateDb");
   setButtonBusy(button, true, "در حال به‌روزرسانی...");
@@ -230,6 +327,7 @@ $("scanBtn").addEventListener("click", async () => {
   }
 
   const button = $("scanBtn");
+  resetAiPanel("اسکن جدید در حال اجرا است...");
   setButtonBusy(button, true, "در حال اسکن...");
   setStatus("آماده‌سازی ایمیج و اجرای اسکن...", "loading");
   try {
@@ -242,6 +340,7 @@ $("scanBtn").addEventListener("click", async () => {
     if (!response.ok) throw new Error(data.detail || "اسکن ناموفق بود.");
 
     currentDownloads = data.downloads;
+    enableAiPanel(data.scan_id);
     allRows = flattenVulns(data.report || {});
     updateSummary(data.summary);
     renderTable();
@@ -249,7 +348,63 @@ $("scanBtn").addEventListener("click", async () => {
     setStatus(data.pulled ? "ایمیج دریافت و با موفقیت اسکن شد." : "اسکن با موفقیت انجام شد.", "success");
     $("summaryTitle").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
+    resetAiPanel("بعد از یک اسکن موفق، پیشنهاد AI فعال می‌شود.");
     setStatus(error.message || "اسکن ناموفق بود.", "error");
+  } finally {
+    setButtonBusy(button, false);
+  }
+});
+
+$("aiRecommendBtn").addEventListener("click", async () => {
+  if (!currentScanId) {
+    $("aiStatus").textContent = "ابتدا یک اسکن موفق انجام دهید.";
+    return;
+  }
+
+  const provider = $("aiProvider").value.trim();
+  const baseUrl = $("aiBaseUrl").value.trim();
+  const model = $("aiModel").value.trim();
+  const apiKey = $("aiApiKey").value.trim();
+
+  if (!baseUrl || !model) {
+    $("aiStatus").textContent = "Base URL و مدل AI را وارد کنید.";
+    return;
+  }
+  if (provider !== "custom" && !apiKey) {
+    $("aiStatus").textContent = "برای این ارائه‌دهنده، API Key الزامی است.";
+    return;
+  }
+
+  const button = $("aiRecommendBtn");
+  setButtonBusy(button, true, "در حال دریافت...");
+  $("aiStatus").textContent = "ارسال خلاصه امن گزارش به سرویس AI...";
+  $("aiResult").hidden = true;
+  $("aiResult").innerHTML = "";
+
+  try {
+    const response = await fetch("/api/ai/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scan_id: currentScanId,
+        provider,
+        base_url: baseUrl,
+        model,
+        api_key: apiKey,
+        language: "fa"
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || "دریافت پیشنهاد AI ناموفق بود.");
+    if (data.ok === false) {
+      renderAiRecommendation(data);
+      $("aiStatus").textContent = data.message || "درخواست به سرویس AI ناموفق بود.";
+      return;
+    }
+    renderAiRecommendation(data);
+    $("aiStatus").textContent = "پیشنهاد AI آماده شد.";
+  } catch (error) {
+    $("aiStatus").textContent = error.message || "دریافت پیشنهاد AI ناموفق بود.";
   } finally {
     setButtonBusy(button, false);
   }
@@ -268,3 +423,4 @@ $("downloadBtn").addEventListener("click", () => {
 loadTrivyVersion();
 // لیست در ورود اولیه فقط یک‌بار دریافت می‌شود؛ تازه‌سازی‌های بعدی کاملاً دستی هستند.
 loadImages();
+$("aiBaseUrl").value = aiProviderBaseUrls[$("aiProvider").value] || "";

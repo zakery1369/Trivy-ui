@@ -5,6 +5,9 @@ import re
 import subprocess
 import hashlib
 import threading
+import urllib.error
+import urllib.parse
+import urllib.request
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -13,7 +16,7 @@ from typing import Any
 import docker
 from docker.errors import DockerException, ImageNotFound
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -30,6 +33,23 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 class ScanRequest(BaseModel):
     image: str = Field(..., min_length=1)
     pull_if_missing: bool = True
+
+
+class AIRecommendRequest(BaseModel):
+    scan_id: str = Field(..., min_length=1)
+    provider: str = Field(..., min_length=1)
+    base_url: str = Field(..., min_length=1)
+    model: str = Field(..., min_length=1)
+    api_key: str = ""
+    language: str = "fa"
+
+
+class AIProviderError(Exception):
+    def __init__(self, status_code: int, provider_error: str, error_code: str = "", error_type: str = ""):
+        self.status_code = status_code
+        self.provider_error = provider_error
+        self.error_code = error_code
+        self.error_type = error_type
 
 
 def docker_client():
@@ -115,6 +135,245 @@ def parse_summary(report: dict[str, Any]) -> dict[str, int]:
             sev = str(vuln.get("Severity", "UNKNOWN")).upper()
             summary[sev] = summary.get(sev, 0) + 1
     return summary
+
+
+def extract_cvss(vuln: dict[str, Any]) -> float | None:
+    cvss = vuln.get("CVSS")
+    if not isinstance(cvss, dict):
+        return None
+
+    scores: list[float] = []
+    for vendor_data in cvss.values():
+        if not isinstance(vendor_data, dict):
+            continue
+        for key in ("V3Score", "V2Score"):
+            value = vendor_data.get(key)
+            if isinstance(value, (int, float)):
+                scores.append(float(value))
+    return max(scores) if scores else None
+
+
+def summarize_report_for_ai(report: dict[str, Any], limit: int = 50) -> tuple[dict[str, Any], dict[str, int]]:
+    severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "UNKNOWN": 4}
+    summary_counts = parse_summary(report)
+    rows: list[dict[str, Any]] = []
+    package_counts: dict[str, int] = {}
+    fixable_count = 0
+    not_fixed_count = 0
+    image_name = ""
+
+    metadata = report.get("Metadata")
+    if isinstance(metadata, dict):
+        image_name = str(metadata.get("RepoTags") or metadata.get("ImageID") or "")
+
+    for result in report.get("Results", []) or []:
+        target = result.get("Target", "")
+        target_type = result.get("Type", "")
+        if not image_name and target:
+            image_name = str(target)
+
+        for vuln in result.get("Vulnerabilities", []) or []:
+            fixed_version = str(vuln.get("FixedVersion") or "").strip()
+            package_name = str(vuln.get("PkgName") or "")
+            severity = str(vuln.get("Severity") or "UNKNOWN").upper()
+
+            if fixed_version:
+                fixable_count += 1
+            else:
+                not_fixed_count += 1
+            if package_name:
+                package_counts[package_name] = package_counts.get(package_name, 0) + 1
+
+            rows.append({
+                "package": package_name,
+                "severity": severity,
+                "id": vuln.get("VulnerabilityID") or "",
+                "installed_version": vuln.get("InstalledVersion") or "",
+                "fixed_version": fixed_version or None,
+                "title": vuln.get("Title") or vuln.get("Description") or "",
+                "target": target,
+                "type": target_type,
+                "cvss": extract_cvss(vuln),
+            })
+
+    rows.sort(key=lambda item: (
+        severity_order.get(str(item["severity"]), 4),
+        0 if item.get("fixed_version") else 1,
+        -(item.get("cvss") or 0),
+    ))
+
+    selected = rows[:limit]
+    compact_report = {
+        "image": image_name,
+        "total_vulnerabilities": len(rows),
+        "severity_counts": {
+            "CRITICAL": summary_counts.get("CRITICAL", 0),
+            "HIGH": summary_counts.get("HIGH", 0),
+            "MEDIUM": summary_counts.get("MEDIUM", 0),
+            "LOW": summary_counts.get("LOW", 0),
+            "UNKNOWN": summary_counts.get("UNKNOWN", 0),
+        },
+        "fixable_vulnerabilities": fixable_count,
+        "not_fixed_vulnerabilities": not_fixed_count,
+        "top_vulnerable_packages": [
+            {"package": name, "count": count}
+            for name, count in sorted(package_counts.items(), key=lambda item: item[1], reverse=True)[:10]
+        ],
+        "vulnerabilities": selected,
+        "omitted_vulnerabilities": max(0, len(rows) - len(selected)),
+    }
+    return compact_report, {
+        "sent_vulnerabilities": len(selected),
+        "omitted_vulnerabilities": compact_report["omitted_vulnerabilities"],
+    }
+
+
+def extract_json_text(value: str) -> str:
+    text = value.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text)
+    return text.strip()
+
+
+def provider_status_message(status_code: int, error_code: str = "") -> str:
+    if status_code == 403 and error_code == "1010":
+        return (
+            "درخواست توسط لایه امنیتی سرویس AI رد شد. اگر Groq استفاده می‌کنید، معمولاً این خطا به API key مربوط نیست "
+            "و می‌تواند به User-Agent، شبکه، IP یا gateway provider مربوط باشد."
+        )
+
+    messages = {
+        401: "کلید API نامعتبر است یا ارسال نشده است.",
+        403: "کلید API دسترسی لازم برای این درخواست را ندارد یا مدل برای این کلید فعال نیست.",
+        404: "مدل یا endpoint سرویس AI اشتباه است.",
+        413: "حجم درخواست برای سرویس AI بیش از حد مجاز است.",
+        429: "محدودیت نرخ درخواست‌های سرویس AI فعال شده است.",
+        498: "ظرفیت سرویس AI در حال حاضر کافی نیست.",
+    }
+    return messages.get(status_code, "درخواست به سرویس AI ناموفق بود.")
+
+
+def redact_sensitive_text(value: str, api_key: str = "") -> str:
+    text = value or ""
+    if api_key:
+        text = text.replace(api_key, "[redacted]")
+    text = re.sub(r"Bearer\s+[A-Za-z0-9._~+/=-]+", "Bearer [redacted]", text, flags=re.IGNORECASE)
+    text = re.sub(r"(authorization|api[-_ ]?key|x-api-key)\s*[:=]\s*[^,\s}]+", r"\1: [redacted]", text, flags=re.IGNORECASE)
+    return text[:1000]
+
+
+def extract_provider_error(body: str, api_key: str = "") -> dict[str, str]:
+    sanitized_body = redact_sensitive_text(body, api_key).strip()
+    if not sanitized_body:
+        return {"message": "", "code": "", "type": ""}
+
+    try:
+        payload = json.loads(sanitized_body)
+    except json.JSONDecodeError:
+        return {"message": sanitized_body, "code": "", "type": ""}
+
+    candidate: Any = payload
+    error_code = ""
+    error_type = ""
+
+    if isinstance(payload, dict):
+        if isinstance(payload.get("error"), dict):
+            error_payload = payload["error"]
+            error_code = str(error_payload.get("code") or "")
+            error_type = str(error_payload.get("type") or "")
+            candidate = error_payload.get("message") or error_payload.get("detail") or error_payload
+        else:
+            error_code = str(payload.get("code") or "")
+            error_type = str(payload.get("type") or "")
+            candidate = payload.get("error") or payload.get("message") or payload.get("detail") or payload
+
+    if isinstance(candidate, (dict, list)):
+        message = redact_sensitive_text(json.dumps(candidate, ensure_ascii=False), api_key)
+    else:
+        message = redact_sensitive_text(str(candidate), api_key)
+
+    return {
+        "message": message,
+        "code": redact_sensitive_text(error_code, api_key),
+        "type": redact_sensitive_text(error_type, api_key),
+    }
+
+
+def call_openai_compatible_chat(base_url: str, model: str, api_key: str, compact_report: dict[str, Any]) -> str:
+    endpoint = base_url.rstrip("/") + "/chat/completions"
+    system_prompt = (
+        "You are a DevSecOps security assistant. Answer in Persian. Be practical and concise. "
+        "Prioritize fixable Critical and High vulnerabilities. Never claim a vulnerability can be fixed "
+        "when fixed_version is missing. Never invent package versions not present in the report summary. "
+        "Recommend base image upgrades when many OS-level vulnerabilities exist. Explain not-fixed "
+        "vulnerabilities carefully. Recommend re-scan after remediation. Avoid generic advice unless tied "
+        "to the report. Output JSON only."
+    )
+    user_prompt = (
+        "Generate remediation recommendations for this compact Trivy summary. Return exactly this JSON shape:\n"
+        "{\n"
+        '  "risk_level": "low|medium|high|critical",\n'
+        '  "executive_summary": "...",\n'
+        '  "priority_actions": [\n'
+        "    {\n"
+        '      "priority": 1,\n'
+        '      "title": "...",\n'
+        '      "reason": "...",\n'
+        '      "affected_packages": ["..."],\n'
+        '      "suggested_action": "...",\n'
+        '      "effort": "low|medium|high"\n'
+        "    }\n"
+        "  ],\n"
+        '  "base_image_recommendation": "...",\n'
+        '  "not_fixed_guidance": "...",\n'
+        '  "next_steps": ["..."]\n'
+        "}\n\n"
+        f"Report summary:\n{json.dumps(compact_report, ensure_ascii=False)}"
+    )
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": 0.2,
+    }
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Trivy-UI-AI-Remediation/1.0",
+    }
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    request = urllib.request.Request(
+        endpoint,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=45) as response:
+            response_payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        provider_error = extract_provider_error(body, api_key)
+        raise AIProviderError(
+            exc.code,
+            provider_error.get("message", ""),
+            provider_error.get("code", ""),
+            provider_error.get("type", ""),
+        ) from exc
+
+    choices = response_payload.get("choices") or []
+    if not choices:
+        raise ValueError("missing choices")
+    message = choices[0].get("message") or {}
+    content = message.get("content")
+    if not content:
+        raise ValueError("missing content")
+    return str(content)
 
 
 def make_html_report(report: dict[str, Any], destination: Path, image_ref: str = "") -> None:
@@ -378,6 +637,76 @@ def scan(req: ScanRequest):
             "txt": f"/api/report/{scan_id}/txt",
             "sarif": f"/api/report/{scan_id}/sarif",
         },
+    }
+
+
+@app.post("/api/ai/recommend")
+def ai_recommend(req: AIRecommendRequest):
+    scan_id = safe_filename(req.scan_id.strip())
+    provider = req.provider.strip().lower()
+    base_url = req.base_url.strip()
+    model = req.model.strip()
+    api_key = req.api_key.strip()
+
+    if not scan_id:
+        raise HTTPException(status_code=400, detail="شناسه اسکن الزامی است.")
+    if not provider:
+        raise HTTPException(status_code=400, detail="ارائه‌دهنده AI الزامی است.")
+    if not base_url:
+        raise HTTPException(status_code=400, detail="آدرس سرویس AI الزامی است.")
+    if not model:
+        raise HTTPException(status_code=400, detail="مدل AI الزامی است.")
+    if provider != "custom" and not api_key:
+        raise HTTPException(status_code=400, detail="کلید API برای این ارائه‌دهنده الزامی است.")
+
+    parsed_url = urllib.parse.urlparse(base_url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+        raise HTTPException(status_code=400, detail="آدرس سرویس AI معتبر نیست.")
+
+    report_path = REPORT_DIR / f"{scan_id}.json"
+    if not report_path.exists():
+        raise HTTPException(status_code=404, detail="گزارش اسکن پیدا نشد.")
+
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(status_code=500, detail="خواندن گزارش اسکن ناموفق بود.")
+
+    summary_limit = 20 if provider == "groq" else 50
+    compact_report, summary_meta = summarize_report_for_ai(report, limit=summary_limit)
+
+    try:
+        raw_text = call_openai_compatible_chat(base_url, model, api_key, compact_report)
+    except AIProviderError as exc:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "ok": False,
+                "provider": provider,
+                "provider_status": exc.status_code,
+                "provider_error_code": exc.error_code,
+                "message": provider_status_message(exc.status_code, exc.error_code),
+                "provider_error": exc.provider_error,
+                "summary": summary_meta,
+            },
+        )
+    except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError, OSError):
+        raise HTTPException(status_code=502, detail="دریافت پیشنهاد AI ناموفق بود. تنظیمات سرویس، مدل یا کلید API را بررسی کنید.")
+
+    try:
+        recommendation = json.loads(extract_json_text(raw_text))
+    except json.JSONDecodeError:
+        return {
+            "ok": True,
+            "recommendation": None,
+            "raw_text": raw_text,
+            "summary": summary_meta,
+        }
+
+    return {
+        "ok": True,
+        "recommendation": recommendation,
+        "summary": summary_meta,
     }
 
 
