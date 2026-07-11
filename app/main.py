@@ -300,10 +300,10 @@ def extract_provider_error(body: str, api_key: str = "") -> dict[str, str]:
     }
 
 
-def call_openai_compatible_chat(base_url: str, model: str, api_key: str, compact_report: dict[str, Any]) -> str:
+def call_openai_compatible_chat(base_url: str, model: str, api_key: str, compact_report: dict[str, Any], language: str = "fa") -> str:
     endpoint = base_url.rstrip("/") + "/chat/completions"
     system_prompt = (
-        "You are a DevSecOps security assistant. Answer in Persian. Be practical and concise. "
+        f"You are a DevSecOps security assistant. Answer in {'English' if language == 'en' else 'Persian'}. Be practical and concise. "
         "Prioritize fixable Critical and High vulnerabilities. Never claim a vulnerability can be fixed "
         "when fixed_version is missing. Never invent package versions not present in the report summary. "
         "Recommend base image upgrades when many OS-level vulnerabilities exist. Explain not-fixed "
@@ -676,7 +676,7 @@ def ai_recommend(req: AIRecommendRequest):
     compact_report, summary_meta = summarize_report_for_ai(report, limit=summary_limit)
 
     try:
-        raw_text = call_openai_compatible_chat(base_url, model, api_key, compact_report)
+        raw_text = call_openai_compatible_chat(base_url, model, api_key, compact_report, req.language)
     except AIProviderError as exc:
         return JSONResponse(
             status_code=200,
