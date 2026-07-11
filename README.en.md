@@ -45,6 +45,20 @@ After a scan, you can send a minimized report summary to a selected AI provider.
 
 The project is provider-independent and supports OpenAI-compatible APIs.
 
+### Bilingual interface (English and Persian)
+
+Trivy UI includes built-in internationalization for both **English** and **Persian (فارسی)**. Use the language button in the dashboard header to switch languages instantly—no page reload is required.
+
+- Translates dashboard text, controls, status messages, filters, placeholders, tooltips, and accessibility labels
+- Automatically changes the document language and layout direction: **LTR** for English and **RTL** for Persian
+- Formats numbers for the selected locale (`en-US` or `fa-IR`)
+- Saves the selected language in browser `localStorage`, so it remains active on the next visit
+- Re-renders scan summaries, vulnerability tables, and dynamic messages after a language change
+- Sends the selected language with AI remediation requests, so recommendations are returned in the same language as the interface
+- Uses Persian as the default and fallback language when no saved English preference or translation is available
+
+The language setting changes presentation and AI response language only. CVE identifiers, package names, versions, image references, and other technical values remain unchanged for accuracy.
+
 ## Requirements
 
 - Docker
