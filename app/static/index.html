@@ -10,21 +10,24 @@
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="/" aria-label="صفحه اصلی Trivy UI">
+      <a class="brand" href="/" aria-label="صفحه اصلی Trivy UI" data-i18n-aria-label="app.homeLabel">
         <span class="brand-mark" aria-hidden="true">
           <img src="/static/zak.png" alt="" />
         </span>
         <span class="brand-copy">
           <span class="brand-owner" dir="ltr">ZAKOPS</span>
           <strong dir="ltr">Trivy UI</strong>
-          <small>داشبورد اسکن امنیتی ایمیج‌های Docker</small>
+          <small data-i18n="app.tagline">داشبورد اسکن امنیتی ایمیج‌های Docker</small>
         </span>
       </a>
-      <div class="system-status" aria-live="polite">
+      <div class="header-actions">
+        <button id="languageToggle" class="language-toggle" type="button" aria-label="Switch to English" title="Switch to English" data-i18n-aria-label="language.switch" data-i18n-title="language.switch"><span aria-hidden="true" data-i18n="language.short">EN</span></button>
+        <div class="system-status" aria-live="polite">
         <span class="status-dot" aria-hidden="true"></span>
-        <span id="dockerStatus">در حال بررسی Docker...</span>
+        <span id="dockerStatus" data-i18n="docker.checking">در حال بررسی Docker...</span>
         <span class="separator" aria-hidden="true"></span>
         <span id="trivyTitle">Trivy</span>
+        </div>
       </div>
     </div>
   </header>
@@ -32,89 +35,89 @@
   <main class="page-shell">
     <section class="page-intro" aria-labelledby="pageTitle">
       <div>
-        <p class="eyebrow">ارزیابی آسیب‌پذیری کانتینر</p>
-        <h1 id="pageTitle">اسکن یک ایمیج جدید</h1>
-        <p>ایمیج را انتخاب کنید، در صورت نیاز دیتابیس را به‌روز کنید و نتایج اسکن را در همین صفحه بررسی کنید.</p>
+        <p class="eyebrow" data-i18n="intro.eyebrow">ارزیابی آسیب‌پذیری کانتینر</p>
+        <h1 id="pageTitle" data-i18n="intro.title">اسکن یک ایمیج جدید</h1>
+        <p data-i18n="intro.description">ایمیج را انتخاب کنید، در صورت نیاز دیتابیس را به‌روز کنید و نتایج اسکن را در همین صفحه بررسی کنید.</p>
       </div>
-      <div class="workflow" aria-label="مراحل اسکن">
-        <span class="active"><b>۱</b> انتخاب ایمیج</span>
+      <div class="workflow" aria-label="مراحل اسکن" data-i18n-aria-label="workflow.label">
+        <span class="active"><b data-i18n="workflow.step1">۱</b><span data-i18n="workflow.select">انتخاب ایمیج</span></span>
         <i></i>
-        <span><b>۲</b> به‌روزرسانی دیتابیس</span>
+        <span><b data-i18n="workflow.step2">۲</b><span data-i18n="workflow.update">به‌روزرسانی دیتابیس</span></span>
         <i></i>
-        <span><b>۳</b> اجرای اسکن</span>
+        <span><b data-i18n="workflow.step3">۳</b><span data-i18n="workflow.scan">اجرای اسکن</span></span>
         <i></i>
-        <span><b>۴</b> بررسی گزارش</span>
+        <span><b data-i18n="workflow.step4">۴</b><span data-i18n="workflow.review">بررسی گزارش</span></span>
       </div>
     </section>
 
     <section class="card scan-config" aria-labelledby="scanConfigTitle">
       <div class="section-heading">
         <div>
-          <h2 id="scanConfigTitle">تنظیمات اسکن</h2>
-          <p>منبع ایمیج و گزینه موردنظر را مشخص کنید.</p>
+          <h2 id="scanConfigTitle" data-i18n="scan.settingsTitle">تنظیمات اسکن</h2>
+          <p data-i18n="scan.settingsDescription">منبع ایمیج و گزینه موردنظر را مشخص کنید.</p>
         </div>
-        <button id="updateDb" class="btn btn-secondary" type="button">
+        <button id="updateDb" class="btn btn-secondary" type="button" data-i18n="database.update">
           به‌روزرسانی دیتابیس
         </button>
       </div>
 
-      <div class="source-tabs" role="tablist" aria-label="منبع ایمیج">
-        <button class="tab active" id="localTab" data-tab="local" role="tab" aria-selected="true" aria-controls="localPanel">ایمیج محلی</button>
-        <button class="tab" id="remoteTab" data-tab="remote" role="tab" aria-selected="false" aria-controls="remotePanel">Registry / اینترنت</button>
+      <div class="source-tabs" role="tablist" aria-label="منبع ایمیج" data-i18n-aria-label="scan.sourceLabel">
+        <button class="tab active" id="localTab" data-tab="local" data-i18n="scan.localTab" role="tab" aria-selected="true" aria-controls="localPanel">ایمیج محلی</button>
+        <button class="tab" id="remoteTab" data-tab="remote" data-i18n="scan.remoteTab" role="tab" aria-selected="false" aria-controls="remotePanel">Registry / اینترنت</button>
       </div>
 
       <div class="scan-controls">
         <div class="source-fields">
           <div id="localPanel" class="panel active-panel" role="tabpanel" aria-labelledby="localTab">
             <div class="field-head">
-              <label for="localImages">ایمیج موجود روی سیستم</label>
-              <button id="refreshImages" class="text-btn" type="button">تازه‌سازی لیست</button>
+              <label for="localImages" data-i18n="scan.localLabel">ایمیج موجود روی سیستم</label>
+              <button id="refreshImages" class="text-btn" type="button" data-i18n="scan.refresh">تازه‌سازی لیست</button>
             </div>
             <select id="localImages">
-              <option value="">در حال دریافت لیست...</option>
+              <option value="" data-i18n="scan.loadingList">در حال دریافت لیست...</option>
             </select>
-            <small id="imagesStatus" class="field-note">در حال بررسی ایمیج‌های Docker...</small>
+            <small id="imagesStatus" class="field-note" data-i18n="scan.checkingImages">در حال بررسی ایمیج‌های Docker...</small>
           </div>
 
           <div id="remotePanel" class="panel" role="tabpanel" aria-labelledby="remoteTab" hidden>
-            <label for="remoteImage">نام یا آدرس ایمیج</label>
+            <label for="remoteImage" data-i18n="scan.remoteLabel">نام یا آدرس ایمیج</label>
             <input id="remoteImage" type="text" dir="ltr" autocomplete="off" spellcheck="false"
-              placeholder="nginx:latest یا ghcr.io/org/image:tag" />
-            <small class="field-note">در صورت نبود ایمیج، ابتدا از Registry دریافت می‌شود.</small>
+              placeholder="nginx:latest یا ghcr.io/org/image:tag" data-i18n-placeholder="scan.remotePlaceholder" />
+            <small class="field-note" data-i18n="scan.remoteHelp">در صورت نبود ایمیج، ابتدا از Registry دریافت می‌شود.</small>
           </div>
         </div>
-        <button id="scanBtn" class="btn btn-primary" type="button">شروع اسکن</button>
+        <button id="scanBtn" class="btn btn-primary" type="button" data-i18n="scan.start">شروع اسکن</button>
       </div>
 
       <div class="activity-row" aria-live="polite">
-        <div id="scanStatus" class="status">آماده اسکن</div>
-        <small id="dbStatus">وضعیت دیتابیس: نامشخص</small>
+        <div id="scanStatus" class="status" data-i18n="scan.ready">آماده اسکن</div>
+        <small id="dbStatus" data-i18n="database.unknown">وضعیت دیتابیس: نامشخص</small>
       </div>
     </section>
 
     <section class="summary-section" aria-labelledby="summaryTitle">
       <div class="section-heading compact">
         <div>
-          <h2 id="summaryTitle">خلاصه آسیب‌پذیری‌ها</h2>
-          <p>توزیع نتایج بر اساس سطح شدت</p>
+          <h2 id="summaryTitle" data-i18n="summary.title">خلاصه آسیب‌پذیری‌ها</h2>
+          <p data-i18n="summary.description">توزیع نتایج بر اساس سطح شدت</p>
         </div>
       </div>
       <div class="summary-grid">
-        <article class="stat critical"><span>بحرانی <b>Critical</b></span><strong id="criticalCount">۰</strong></article>
-        <article class="stat high"><span>بالا <b>High</b></span><strong id="highCount">۰</strong></article>
-        <article class="stat medium"><span>متوسط <b>Medium</b></span><strong id="mediumCount">۰</strong></article>
-        <article class="stat low"><span>پایین <b>Low</b></span><strong id="lowCount">۰</strong></article>
+        <article class="stat critical"><span><span data-i18n="summary.critical">بحرانی</span><b>Critical</b></span><strong id="criticalCount">۰</strong></article>
+        <article class="stat high"><span><span data-i18n="summary.high">بالا</span><b>High</b></span><strong id="highCount">۰</strong></article>
+        <article class="stat medium"><span><span data-i18n="summary.medium">متوسط</span><b>Medium</b></span><strong id="mediumCount">۰</strong></article>
+        <article class="stat low"><span><span data-i18n="summary.low">پایین</span><b>Low</b></span><strong id="lowCount">۰</strong></article>
       </div>
     </section>
 
     <section class="insights-grid">
       <article class="card distribution-card">
         <div class="section-heading compact">
-          <div><h2>توزیع شدت</h2><p>نمای کلی یافته‌های آخرین اسکن</p></div>
+          <div><h2 data-i18n="distribution.title">توزیع شدت</h2><p data-i18n="distribution.description">نمای کلی یافته‌های آخرین اسکن</p></div>
         </div>
         <div class="chart-layout">
-          <div class="donut" id="donut" role="img" aria-label="نمودار توزیع شدت آسیب‌پذیری‌ها">
-            <div class="donut-content"><span>۰</span><small>مجموع</small></div>
+          <div class="donut" id="donut" role="img" aria-label="نمودار توزیع شدت آسیب‌پذیری‌ها" data-i18n-aria-label="distribution.label">
+            <div class="donut-content"><span>۰</span><small data-i18n="common.total">مجموع</small></div>
           </div>
           <ul class="legend">
             <li><i class="c-critical"></i><span>Critical</span><b id="legendCritical">۰</b></li>
@@ -127,17 +130,17 @@
 
       <article class="card report-card">
         <div class="section-heading compact">
-          <div><h2>دریافت گزارش</h2><p>خروجی آخرین اسکن را ذخیره کنید.</p></div>
+          <div><h2 data-i18n="report.title">دریافت گزارش</h2><p data-i18n="report.description">خروجی آخرین اسکن را ذخیره کنید.</p></div>
         </div>
         <div class="export-controls">
-          <label for="exportFormat">فرمت فایل</label>
+          <label for="exportFormat" data-i18n="report.format">فرمت فایل</label>
           <select id="exportFormat" dir="ltr">
             <option value="html">HTML</option>
             <option value="json">JSON</option>
             <option value="sarif">SARIF</option>
             <option value="txt">TXT</option>
           </select>
-          <button id="downloadBtn" class="btn btn-secondary" type="button" disabled>دانلود گزارش</button>
+          <button id="downloadBtn" class="btn btn-secondary" type="button" disabled data-i18n="report.download">دانلود گزارش</button>
         </div>
       </article>
     </section>
@@ -145,14 +148,14 @@
     <section class="card ai-card" aria-labelledby="aiTitle">
       <div class="section-heading compact">
         <div>
-          <h2 id="aiTitle">پیشنهادهای اصلاح با AI</h2>
-          <p>اختیاری است؛ فقط با کلید و تنظیمات خودتان و بعد از کلیک دستی ارسال می‌شود.</p>
+          <h2 id="aiTitle" data-i18n="ai.title">پیشنهادهای اصلاح با AI</h2>
+          <p data-i18n="ai.description">اختیاری است؛ فقط با کلید و تنظیمات خودتان و بعد از کلیک دستی ارسال می‌شود.</p>
         </div>
       </div>
 
       <div class="ai-grid">
         <div>
-          <label for="aiProvider">ارائه‌دهنده</label>
+          <label for="aiProvider" data-i18n="ai.provider">ارائه‌دهنده</label>
           <select id="aiProvider">
             <option value="openai">OpenAI</option>
             <option value="openrouter">OpenRouter</option>
@@ -162,7 +165,7 @@
           </select>
         </div>
         <div>
-          <label for="aiModel">مدل</label>
+          <label for="aiModel" data-i18n="ai.model">مدل</label>
           <input id="aiModel" type="text" dir="ltr" autocomplete="off" spellcheck="false" placeholder="openai/gpt-4o-mini" />
         </div>
         <div class="ai-base-url">
@@ -171,13 +174,13 @@
         </div>
         <div>
           <label for="aiApiKey">API Key</label>
-          <input id="aiApiKey" type="password" dir="ltr" autocomplete="off" spellcheck="false" placeholder="فقط برای همین درخواست استفاده می‌شود" />
+          <input id="aiApiKey" type="password" dir="ltr" autocomplete="off" spellcheck="false" placeholder="فقط برای همین درخواست استفاده می‌شود" data-i18n-placeholder="ai.keyPlaceholder" />
         </div>
       </div>
 
       <div class="ai-actions">
-        <button id="aiRecommendBtn" class="btn btn-secondary" type="button" disabled>دریافت پیشنهاد AI</button>
-        <small id="aiStatus">ابتدا یک اسکن موفق انجام دهید.</small>
+        <button id="aiRecommendBtn" class="btn btn-secondary" type="button" disabled data-i18n="ai.get">دریافت پیشنهاد AI</button>
+        <small id="aiStatus" data-i18n="ai.scanFirst">ابتدا یک اسکن موفق انجام دهید.</small>
       </div>
 
       <div id="aiResult" class="ai-result" hidden></div>
@@ -186,17 +189,17 @@
     <section class="card results-card" aria-labelledby="resultsTitle">
       <div class="results-header">
         <div>
-          <h2 id="resultsTitle">جزئیات آسیب‌پذیری‌ها</h2>
-          <p><span id="resultCount">۰</span> مورد در نتایج فعلی</p>
+          <h2 id="resultsTitle" data-i18n="results.title">جزئیات آسیب‌پذیری‌ها</h2>
+          <p><span id="resultCount">۰</span> <span data-i18n="results.countSuffix">مورد در نتایج فعلی</span></p>
         </div>
         <div class="search-field">
-          <label class="sr-only" for="searchBox">جستجو در نتایج</label>
-          <input id="searchBox" type="search" placeholder="جستجو در CVE، پکیج یا عنوان..." />
+          <label class="sr-only" for="searchBox" data-i18n="results.searchLabel">جستجو در نتایج</label>
+          <input id="searchBox" type="search" placeholder="جستجو در CVE، پکیج یا عنوان..." data-i18n-placeholder="results.searchPlaceholder" />
         </div>
       </div>
 
-      <div class="filters" role="group" aria-label="فیلتر شدت">
-        <button class="filter active" data-sev="ALL" type="button">همه</button>
+      <div class="filters" role="group" aria-label="فیلتر شدت" data-i18n-aria-label="results.filterLabel">
+        <button class="filter active" data-sev="ALL" type="button" data-i18n="results.all">همه</button>
         <button class="filter critical" data-sev="CRITICAL" type="button">Critical</button>
         <button class="filter high" data-sev="HIGH" type="button">High</button>
         <button class="filter medium" data-sev="MEDIUM" type="button">Medium</button>
@@ -207,16 +210,17 @@
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>پکیج</th><th>شدت</th><th>CVE</th><th>نسخه نصب‌شده</th><th>نسخه اصلاح‌شده</th><th>عنوان</th>
+            <th data-i18n="results.package">پکیج</th><th data-i18n="results.severity">شدت</th><th>CVE</th><th data-i18n="results.installed">نسخه نصب‌شده</th><th data-i18n="results.fixed">نسخه اصلاح‌شده</th><th data-i18n="results.itemTitle">عنوان</th>
           </tr></thead>
           <tbody id="resultsBody">
-            <tr><td colspan="6" class="empty">هنوز اسکنی انجام نشده است.</td></tr>
+            <tr><td colspan="6" class="empty" data-i18n="results.notScanned">هنوز اسکنی انجام نشده است.</td></tr>
           </tbody>
         </table>
       </div>
     </section>
   </main>
 
+  <script src="/static/i18n.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>
