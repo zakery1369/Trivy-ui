@@ -2,7 +2,7 @@
 
 [فارسی](README.md) | [English](README.en.md)
 
-[Changelog](CHANGELOG.en.md) | [Contributing guide](CONTRIBUTING.md) | [Pull request template](.github/PULL_REQUEST_TEMPLATE.md)
+[Contributing guide](CONTRIBUTING.md) | [Pull request template](.github/PULL_REQUEST_TEMPLATE.md)
 
 ![Trivy UI](https://raw.githubusercontent.com/zakery1369/pics/refs/heads/master/Trivy-UI.png)
 
