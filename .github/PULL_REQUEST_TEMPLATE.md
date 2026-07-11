@@ -1,19 +1,14 @@
-# قالب Pull Request / Pull Request Template
-
-این قالب دوزبانه است؛ می‌توانید پاسخ‌ها را به فارسی یا انگلیسی بنویسید.
-This template is bilingual; responses may be written in Persian or English.
-
-## خلاصه Pull Request / Pull Request Summary
+## Pull Request Summary
 
 Please provide a clear and concise summary of what this pull request changes.
 
-## چه چیزی تغییر کرده است؟ / What Changed?
+## What Changed?
 
 *
 *
 *
 
-## چرا این تغییر لازم است؟ / Why Is This Needed?
+## Why Is This Needed?
 
 Explain the problem, improvement, or use case this PR addresses.
 
@@ -25,11 +20,11 @@ Examples:
 * Improves AI-assisted analysis
 * Updates documentation or setup flow
 
-## Issue مرتبط / Related Issue
+## Related Issue
 
 Closes #
 
-## نوع تغییر / Type of Change
+## Type of Change
 
 * [ ] Bug fix
 * [ ] New feature
@@ -43,7 +38,7 @@ Closes #
 * [ ] Test / CI update
 * [ ] Other
 
-## بخش تحت تأثیر / Area Affected
+## Area Affected
 
 * [ ] Dashboard
 * [ ] Scan results page
@@ -59,7 +54,7 @@ Closes #
 * [ ] Documentation
 * [ ] Other
 
-## سازگاری با Trivy / Trivy Compatibility
+## Trivy Compatibility
 
 Please mention the Trivy version or output format this change was tested with.
 
@@ -69,7 +64,7 @@ Output format tested:
 Example: JSON / table / SARIF / CycloneDX / SPDX
 ```
 
-## تصویر یا نمایش / Screenshots or Demo
+## Screenshots / Demo
 
 For UI changes, please add screenshots, screen recordings, or before/after examples.
 
@@ -77,7 +72,7 @@ Before:
 
 After:
 
-## آزمایش / Testing
+## Testing
 
 Describe how you tested this change.
 
@@ -95,7 +90,7 @@ Backend/runtime version:
 Trivy version:
 ```
 
-## چک‌لیست قابلیت AI / AI Feature Checklist
+## AI Feature Checklist
 
 Complete this section if the PR changes anything related to AI features, prompts, summaries, recommendations, or report analysis.
 
@@ -106,7 +101,7 @@ Complete this section if the PR changes anything related to AI features, prompts
 * [ ] AI-generated explanations do not hide or remove the original Trivy findings
 * [ ] Users can still access the raw Trivy result or source finding
 
-## چک‌لیست امنیت / Security Checklist
+## Security Checklist
 
 * [ ] No secrets, tokens, passwords, private keys, or credentials are included
 * [ ] No unsafe default configuration was introduced
@@ -115,14 +110,14 @@ Complete this section if the PR changes anything related to AI features, prompts
 * [ ] Vulnerability data is not exposed to unauthorized users
 * [ ] Security-related behavior is documented where needed
 
-## تغییرات ناسازگار / Breaking Changes
+## Breaking Changes
 
 * [ ] This PR does not introduce breaking changes
 * [ ] This PR introduces breaking changes
 
 If this PR introduces breaking changes, explain them here:
 
-## مستندات / Documentation
+## Documentation
 
 * [ ] Documentation was updated
 * [ ] Documentation update is not needed
@@ -130,7 +125,7 @@ If this PR introduces breaking changes, explain them here:
 * [ ] Setup or configuration docs were updated
 * [ ] Screenshots or examples were updated
 
-## مجوز و برند / License and Branding
+## License and Branding
 
 By submitting this pull request, I confirm that:
 
@@ -138,7 +133,7 @@ By submitting this pull request, I confirm that:
 * [ ] I have the right to contribute this code
 * [ ] I understand that the project name, logo, and branding are not automatically licensed for use in unofficial forks or modified versions
 
-## چک‌لیست نهایی / Final Checklist
+## Final Checklist
 
 * [ ] My code follows the project style
 * [ ] I have tested my changes locally
@@ -147,6 +142,7 @@ By submitting this pull request, I confirm that:
 * [ ] I have updated documentation where needed
 * [ ] This PR is ready for review
 
-## توضیحات تکمیلی / Additional Notes
+## Additional Notes
 
 Add any extra context, limitations, concerns, or review notes here.
+
