@@ -1,4 +1,0 @@
-## [{{TAG}}] - {{DATE}}
-
-- {{DESCRIPTION}} (`{{COMMIT}}`)
-
