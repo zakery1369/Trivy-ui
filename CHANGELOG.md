@@ -31,4 +31,4 @@ All notable Trivy UI changes are recorded here. This repository has no version t
 
 ## Releases
 
-There are no tagged releases yet. After the first tag is created, its changes should move from “Unreleased” into a dated version section.
+Tagged releases are added automatically when a tag points to a commit on the `master` branch. Each entry uses the tagged commit's subject as its description.

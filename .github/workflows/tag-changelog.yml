@@ -1,0 +1,67 @@
+name: Update changelog for tag
+
+on:
+  push:
+    tags:
+      - "*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: changelog-master
+  cancel-in-progress: false
+
+jobs:
+  update-changelog:
+    name: Add tagged commit to changelog
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out master with complete history
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Verify that the tagged commit is on master
+        run: |
+          git fetch --force origin master:refs/remotes/origin/master --tags
+          tagged_commit="$(git rev-parse "${GITHUB_REF}^{commit}")"
+          if ! git merge-base --is-ancestor "$tagged_commit" origin/master; then
+            echo "The tagged commit is not part of master; skipping changelog update."
+            exit 0
+          fi
+          echo "TAGGED_COMMIT=$tagged_commit" >> "$GITHUB_ENV"
+          echo "UPDATE_CHANGELOG=true" >> "$GITHUB_ENV"
+
+      - name: Build changelog entry from the tagged commit
+        if: env.UPDATE_CHANGELOG == 'true'
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          description="$(git log -1 --format=%s "$TAGGED_COMMIT")"
+          release_date="$(git log -1 --date=format:%Y-%m-%d --format=%ad "$TAGGED_COMMIT")"
+          short_commit="$(git rev-parse --short "$TAGGED_COMMIT")"
+          python3 scripts/update_changelog.py \
+            --changelog CHANGELOG.md \
+            --template .github/CHANGELOG_ENTRY_TEMPLATE.md \
+            --tag "$TAG_NAME" \
+            --date "$release_date" \
+            --description "$description" \
+            --commit "$short_commit"
+
+      - name: Commit changelog to master
+        if: env.UPDATE_CHANGELOG == 'true'
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md already contains $TAG_NAME; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "docs(changelog): add ${TAG_NAME}"
+          git push origin HEAD:master
