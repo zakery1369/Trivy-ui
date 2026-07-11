@@ -119,7 +119,7 @@ Before submitting a pull request:
 2. Make your changes
 3. Test your changes locally
 4. Update documentation if needed
-5. Open a pull request using the provided pull request template
+5. Open a pull request using the provided [pull request template](.github/PULL_REQUEST_TEMPLATE.md)
 
 Please make sure your pull request includes:
 
