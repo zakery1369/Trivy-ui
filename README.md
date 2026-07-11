@@ -2,6 +2,8 @@
 
 [فارسی](README.md) | [English](README.en.md)
 
+[تاریخچه تغییرات](CHANGELOG.md) | [راهنمای مشارکت](CONTRIBUTING.md) | [قالب Pull Request](.github/PULL_REQUEST_TEMPLATE.md)
+
 ![Trivy UI](https://raw.githubusercontent.com/zakery1369/pics/refs/heads/master/Trivy-UI.png)
 
 یک رابط کاربری فارسی، ساده و مدرن برای اسکن امنیتی Docker Imageها با استفاده از [Trivy](https://github.com/aquasecurity/trivy).

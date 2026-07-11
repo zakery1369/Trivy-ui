@@ -2,6 +2,8 @@
 
 [فارسی](README.md) | [English](README.en.md)
 
+[Changelog](CHANGELOG.en.md) | [Contributing guide](CONTRIBUTING.md) | [Pull request template](.github/PULL_REQUEST_TEMPLATE.md)
+
 ![Trivy UI](https://raw.githubusercontent.com/zakery1369/pics/refs/heads/master/Trivy-UI.png)
 
 A simple, modern, bilingual interface for scanning Docker images with [Trivy](https://github.com/aquasecurity/trivy). It lets you scan images, inspect vulnerabilities, export security reports, and request AI-assisted analysis and remediation advice without running Trivy commands directly.
