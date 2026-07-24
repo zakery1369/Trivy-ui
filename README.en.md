@@ -5,7 +5,7 @@
 [Contributing guide](CONTRIBUTING.md) | [Pull request template](.github/PULL_REQUEST_TEMPLATE.md)
 
 ![Trivy UI](https://raw.githubusercontent.com/zakery1369/pics/refs/heads/master/Trivy-UI.png)
-
+ط
 A simple, modern, bilingual interface for scanning Docker images with [Trivy](https://github.com/aquasecurity/trivy). It lets you scan images, inspect vulnerabilities, export security reports, and request AI-assisted analysis and remediation advice without running Trivy commands directly.
 
 ## Features
@@ -119,11 +119,33 @@ trivy-ui-zakops/
 ├── README.md
 ├── README.en.md
 └── app/
-    ├── main.py
-    └── static/
+    ├── __init__.py
+    ├── main.py                 # FastAPI app creation, static mount, and router registration
+    ├── core/                   # Environment and path configuration
+    │   ├── __init__.py
+    │   ├── config.py
+    │   └── paths.py
+    ├── schemas/                # Pydantic request models
+    │   ├── __init__.py
+    │   ├── common.py
+    │   └── scan.py
+    ├── routers/                # API and page route handlers
+    │   ├── __init__.py
+    │   ├── health.py
+    │   ├── images.py
+    │   ├── pages.py
+    │   ├── reports.py
+    │   └── scan.py
+    ├── services/               # Docker, Trivy, report, and AI service logic
+    │   ├── ai_service.py
+    │   ├── docker_service.py
+    │   ├── report_service.py
+    │   └── trivy_service.py
+    └── static/                 # Plain HTML/CSS/JavaScript frontend
         ├── index.html
         ├── styles.css
         ├── app.js
+        ├── i18n.js
         ├── zak.png
         └── fonts/
             └── Vazirmatn.woff2

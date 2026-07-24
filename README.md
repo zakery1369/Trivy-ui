@@ -310,14 +310,41 @@ trivy-ui-zakops/
 ├── docker-compose.yml
 ├── requirements.txt
 ├── README.md
-├── trivy-cache
+├── README.en.md
 
 └── app/
-    ├── main.py
-    └── static/
+    ├── __init__.py
+    ├── main.py                 # ساخت برنامه FastAPI، mount فایل‌های static و ثبت routerها
+
+    ├── core/                   # تنظیمات مسیرها و متغیرهای محیطی
+    │   ├── __init__.py
+    │   ├── config.py
+    │   └── paths.py
+
+    ├── schemas/                # مدل‌های Pydantic برای requestها
+    │   ├── __init__.py
+    │   ├── common.py
+    │   └── scan.py
+
+    ├── routers/                # مسیرهای API و صفحه اصلی
+    │   ├── __init__.py
+    │   ├── health.py
+    │   ├── images.py
+    │   ├── pages.py
+    │   ├── reports.py
+    │   └── scan.py
+
+    ├── services/               # منطق Docker، Trivy، گزارش‌ها و تحلیل AI
+    │   ├── ai_service.py
+    │   ├── docker_service.py
+    │   ├── report_service.py
+    │   └── trivy_service.py
+
+    └── static/                 # رابط کاربری HTML/CSS/JavaScript
         ├── index.html
         ├── styles.css
         ├── app.js
+        ├── i18n.js
         ├── zak.png
         └── fonts/
             └── Vazirmatn.woff2
